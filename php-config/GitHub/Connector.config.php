@@ -1,0 +1,3 @@
+<?php
+
+GitHub\Connector::$webhookSecret = '';
