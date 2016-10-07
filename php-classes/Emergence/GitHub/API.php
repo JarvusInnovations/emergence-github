@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHub;
+namespace Emergence\GitHub;
 
 class API
 {
@@ -88,7 +88,7 @@ class API
         // execute request
         $result = curl_exec($ch);
         curl_close($ch);
-        
+
         if (isset($fp)) {
             fclose($fp);
         } elseif (!isset($options['decodeJson']) || $options['decodeJson']) {

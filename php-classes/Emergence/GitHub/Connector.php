@@ -1,6 +1,6 @@
 <?php
 
-namespace GitHub;
+namespace Emergence\GitHub;
 
 use Exception;
 use Emergence\EventBus;

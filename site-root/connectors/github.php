@@ -1,3 +1,3 @@
 <?php
 
-GitHub\Connector::handleRequest();
+Emergence\GitHub\Connector::handleRequest();
