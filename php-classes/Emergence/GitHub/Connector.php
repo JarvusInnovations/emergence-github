@@ -15,6 +15,8 @@ class Connector extends \Emergence\Connectors\AbstractConnector
         switch ($action ?: $action = static::shiftPath()) {
             case 'webhooks':
                 return static::handleWebhooksRequest();
+            case 'oauth':
+                return static::handleOAuthRequest();
             default:
                 return parent::handleRequest($action);
         }
@@ -61,5 +63,33 @@ class Connector extends \Emergence\Connectors\AbstractConnector
         EventBus::fireEvent($_SERVER['HTTP_X_GITHUB_EVENT'], __NAMESPACE__, $data);
 
         return static::respond('webhookReceived', ['success' => true], 'json');
+    }
+
+    public static function handleOAuthRequest()
+    {
+        if (empty($_GET['code'])) {
+            throw new Exception('code missing');
+        }
+
+        $responseData = API::request('https://github.com/login/oauth/access_token', [
+            'skipAuth' => true,
+            'headers' => [
+                'Accept: application/json'
+            ],
+            'post' => [
+                'client_id' => API::$clientId,
+                'client_secret' => API::$clientSecret,
+                'code' => $_GET['code']
+            ]
+        ]);
+
+        if (empty($responseData['access_token'])) {
+            \Debug::dumpVar($responseData);
+            throw new Exception('access_token not returned by GitHub');
+        }
+
+        return static::respond('message', [
+            'message' => 'Access token issued by GitHub: ' . $responseData['access_token']
+        ]);
     }
 }
