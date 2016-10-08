@@ -29,3 +29,7 @@ GitHub representing the application.
 6. Generate a random string for "Secret", also save to `$webhookSecret` in `php-config/Emergence/GitHub/Connector.config.php`
 7. Choose desired events
 8. Click "Add webhook" to finish
+
+To process incoming webhook payloads, create scripts under `event-handlers/Emergence/GitHub/EVENT_NAME/`
+
+[ngrok](https://ngrok.com) is helpful for testing and debugging webhooks
