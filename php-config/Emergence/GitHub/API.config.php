@@ -18,6 +18,6 @@
  * GitHub representing the application
  */
 
-GitHub\API::$clientId = '';
-GitHub\API::$clientSecret = '';
-GitHub\API::$accessToken = '';
+Emergence\GitHub\API::$clientId = '';
+Emergence\GitHub\API::$clientSecret = '';
+Emergence\GitHub\API::$accessToken = '';

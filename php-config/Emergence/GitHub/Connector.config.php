@@ -1,3 +1,3 @@
 <?php
 
-GitHub\Connector::$webhookSecret = '';
+Emergence\GitHub\Connector::$webhookSecret = '';
