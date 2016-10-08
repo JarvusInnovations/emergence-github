@@ -8,6 +8,6 @@ Git::$repositories['emergence-github'] = [
         'php-classes/Emergence/GitHub',
         'php-config/Emergence/GitHub',
         'php-config/Git.config.d/emergence-github.php',
-        'site-root/connectorts/github.php'
+        'site-root/connectors/github.php'
     ]
 ];
