@@ -41,7 +41,7 @@ class API
         }
 
         if (empty($options['skipAuth'])) {
-            $options['headers'][] = 'Authorization: token ' . static::getAccessToken();
+            $options['headers'][] = 'Authorization: token ' . (empty($options['accessToken']) ? static::getAccessToken() : $options['accessToken']);
         }
 
         $options['headers'][] = 'User-Agent: emergence';
