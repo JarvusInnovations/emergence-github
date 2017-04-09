@@ -3,6 +3,7 @@
 namespace Emergence\GitHub;
 
 use Exception;
+use Site;
 use Emergence\EventBus;
 
 
@@ -13,6 +14,10 @@ class Connector extends \Emergence\Connectors\AbstractConnector
     public static function handleRequest($action = null)
     {
         switch ($action ?: $action = static::shiftPath()) {
+            case 'link-user':
+                return static::handleLinkUserRequest();
+            case 'unlink-user':
+                return static::handleUnlinkUserRequest();
             case 'webhooks':
                 return static::handleWebhooksRequest();
             case 'oauth':
@@ -20,6 +25,39 @@ class Connector extends \Emergence\Connectors\AbstractConnector
             default:
                 return parent::handleRequest($action);
         }
+    }
+
+    public static function handleLinkUserRequest()
+    {
+        $GLOBALS['Session']->requireAuthentication();
+
+        $stateToken = sha1(microtime().rand().$_SERVER['REMOTE_ADDR']);
+        setcookie('gh-state', $stateToken, time() + 600, '/connectors/github');
+
+        Site::redirect('https://github.com/login/oauth/authorize', [
+            'client_id' => API::$clientId,
+            'redirect_uri' => (Site::getConfig('ssl') ? 'https' : 'http').'://'.$_SERVER['HTTP_HOST'].'/connectors/github/oauth/link-user',
+            'scope' => 'user repo',
+            'state' => $stateToken
+        ]);
+    }
+
+    public static function handleUnlinkUserRequest()
+    {
+        $GLOBALS['Session']->requireAuthentication();
+
+        if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+            return static::respond('confirm', [
+                'question' => _('Are you sure you want to unlink your GitHub user account?')
+            ]);
+        }
+
+        $GLOBALS['Session']->Person->GitHubToken = null;
+        $GLOBALS['Session']->Person->save();
+
+        return static::respond('message', [
+            'message' => 'Your GitHub account has been unlinked from your user profile successfully'
+        ]);
     }
 
     public static function handleWebhooksRequest()
@@ -71,6 +109,20 @@ class Connector extends \Emergence\Connectors\AbstractConnector
             throw new Exception('code missing');
         }
 
+        if (empty($_GET['state'])) {
+            throw new Exception('state missing');
+        }
+
+        if (empty($_COOKIE['gh-state']) || $_GET['state'] != $_COOKIE['gh-state']) {
+            return static::throwInvalidRequestError('The returning GitHub state token does not match the one you were sent out with, please try again');
+        }
+
+        if (static::peekPath() == 'link-user') {
+            $GLOBALS['Session']->requireAuthentication();
+        }
+
+        setcookie('gh-state', '', time() - 3600, '/connectors/github');
+
         $responseData = API::request('https://github.com/login/oauth/access_token', [
             'skipAuth' => true,
             'headers' => [
@@ -84,8 +136,16 @@ class Connector extends \Emergence\Connectors\AbstractConnector
         ]);
 
         if (empty($responseData['access_token'])) {
-            \Debug::dumpVar($responseData);
             throw new Exception('access_token not returned by GitHub');
+        }
+
+        if (static::peekPath() == 'link-user') {
+            $GLOBALS['Session']->Person->GitHubToken = $responseData['access_token'];
+            $GLOBALS['Session']->Person->save();
+
+            return static::respond('message', [
+                'message' => 'Your GitHub account has been linked to your user profile successfully'
+            ]);
         }
 
         return static::respond('message', [
