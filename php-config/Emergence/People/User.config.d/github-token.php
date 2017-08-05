@@ -4,5 +4,6 @@ use Emergence\People\User;
 
 
 User::$fields['GitHubToken'] = [
-    'default' => null
+    'default' => null,
+    'excludeFromData' => true
 ];
