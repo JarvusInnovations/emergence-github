@@ -74,28 +74,30 @@ class Connector extends \Emergence\Connectors\AbstractConnector
             throw new Exception('request body missing');
         }
 
-        if (static::$webhookSecret) {
-            if (!extension_loaded('hash')) {
-                throw new Exception('hash extension not available');
-            }
-
-            if (empty($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
-                throw new Exception('signature header missing');
-            }
-
-            list($algo, $hash) = explode('=', $_SERVER['HTTP_X_HUB_SIGNATURE'], 2) + ['', ''];
-
-            if (!in_array($algo, hash_algos())) {
-                throw new Exception('unsupported hash algorithm: ' . $algo);
-            }
-
-            if ($hash != hash_hmac($algo, $rawData, static::$webhookSecret)) {
-                throw new Exception('invalid signature');
-            }
-        }
-
         if (!$data = json_decode($rawData, true)) {
             throw new Exception('failed to parse request body');
+        }
+
+        if (static::$webhookSecret) {
+            if (empty($data['secret'] || $data['secret'] != static::$webhookSecret)) {
+                if (!extension_loaded('hash')) {
+                    throw new Exception('hash extension not available');
+                }
+
+                if (empty($_SERVER['HTTP_X_HUB_SIGNATURE'])) {
+                    throw new Exception('signature header missing');
+                }
+
+                list($algo, $hash) = explode('=', $_SERVER['HTTP_X_HUB_SIGNATURE'], 2) + ['', ''];
+
+                if (!in_array($algo, hash_algos())) {
+                    throw new Exception('unsupported hash algorithm: ' . $algo);
+                }
+
+                if ($hash != hash_hmac($algo, $rawData, static::$webhookSecret)) {
+                    throw new Exception('invalid signature');
+                }
+            }
         }
 
         EventBus::fireEvent($_SERVER['HTTP_X_GITHUB_EVENT'], __NAMESPACE__, $data);
